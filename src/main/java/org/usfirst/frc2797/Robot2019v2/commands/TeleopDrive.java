@@ -51,6 +51,10 @@ public class TeleopDrive extends Command {
     @Override
     protected void execute() {
         drivetrain.drive(xbx.getY(Hand.kLeft), xbx.getY(Hand.kRight));
+        if(xbx.getAButtonPressed()){
+            System.out.println("Rotating 90 degrees");
+            drivetrain.turnToAngle(90.0, 0.75);
+        }
     }
 
     // Make this return true when this Command no longer needs to run execute()
