@@ -1,40 +1,33 @@
 package org.usfirst.frc2797.Robot2019v2.subsystems;
 
-import edu.wpi.first.wpilibj.Spark;
-import edu.wpi.first.wpilibj.SpeedControllerGroup;
+import edu.wpi.first.wpilibj.DoubleSolenoid;
+import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.command.Subsystem;
 
 public class Climber extends Subsystem {
+    //Creating Class Motors
 
-    private Spark leftMotor;
-    private Spark rightMotor;
-
-    private SpeedControllerGroup climberMotors;
+    private final DoubleSolenoid solenoid;
 
     public Climber(){
-        leftMotor = new Spark(4);
-        addChild("leftMotor", leftMotor);
-        leftMotor.setInverted(false);
+        solenoid = new DoubleSolenoid(2,3);
 
-        rightMotor = new Spark(5);
-        addChild("rightMotor", rightMotor);
-        rightMotor.setInverted(true);
-
-        climberMotors = new SpeedControllerGroup(leftMotor, rightMotor);
-        addChild("climberMotors", climberMotors);
-
+        solenoid.set(Value.kReverse);
     }
 
     public void initDefaultCommand(){
 
     }
 
-    @Override
-    public void periodic(){
-
+    public void toggleClimber(){
+        solenoid.set((solenoid.get().equals(Value.kForward) ? Value.kReverse:Value.kForward));
     }
 
-    public void driveClimber(double speed){
-        climberMotors.set(speed);
+    public void extend(){
+        solenoid.set(Value.kForward);
+    }
+
+    public void retract(){
+        solenoid.set(Value.kReverse);
     }
 }
