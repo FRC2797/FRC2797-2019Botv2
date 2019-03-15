@@ -1,5 +1,7 @@
 package org.usfirst.frc2797.Robot2019v2.subsystems;
 
+import java.awt.Image;
+
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 import com.kauailabs.navx.frc.AHRS;
@@ -59,7 +61,38 @@ public class Drivetrain extends Subsystem implements PIDOutput {
 
     //Data received from the limelight
     private NetworkTable table = Robot.table;
-    private  double x, y, area;
+    private static double x, y, area, skew;
+    private boolean validTarget;
+    private Image hasTarget;
+
+    //tape height is the regulation field height
+    private final static double tapeHeight = 32.4;
+
+    //TODO change height of limelight
+    private final static double robotHeight = 8.25;
+
+    private final static double angleOfLimelight = 10;
+
+    private final static double robotLength = 38.5;    
+    
+    //Closest angle to bot 
+    private static double a2 = 90 - x;
+    
+    private static double distance1 = (tapeHeight - robotHeight) / Math.tan(angleOfLimelight-a2);
+
+    private static double distance3 = (Math.tan(a2) * distance1); 
+
+    private static double distance2 = (Math.cos(a2) * distance3);
+
+
+    //not sure what these do exactly 
+    private static double A = (distance3 + 33);
+
+    private static double B = distance3;
+    
+    private static double actualAngle = Math.atan(B / A);
+
+    
 
 
     public Drivetrain() {
@@ -67,10 +100,10 @@ public class Drivetrain extends Subsystem implements PIDOutput {
         /**Initialize the motor controllers for the drivetrain */
         
         //Right side motor controllers
-        frontRight = new VictorSPX(2);
-        frontRight.setInverted(true);
+        frontRight = new VictorSPX(7);
+        frontRight.setInverted(false);
         
-        rearRight = new VictorSPX(3);
+        rearRight = new VictorSPX(3);        
         rearRight.setInverted(true);
 
         rearRight.follow(frontRight);
@@ -142,19 +175,25 @@ public class Drivetrain extends Subsystem implements PIDOutput {
         NetworkTableEntry tx = table.getEntry("tx");
         NetworkTableEntry ty = table.getEntry("ty");
         NetworkTableEntry ta = table.getEntry("ta");
-
+        NetworkTableEntry ts = table.getEntry("ts");
+        NetworkTableEntry tv = table.getEntry("tv");
+        
         //Read values periodically
         x = tx.getDouble(0.0);
         y = ty.getDouble(0.0);
         area = ta.getDouble(0.0);
+        skew = ts.getDouble(0.0);
+        validTarget = tv.getBoolean(false);
 
         //Post to smart dashboard periodically
         SmartDashboard.putNumber("LimelightX", x);
         SmartDashboard.putNumber("LimelightY", y);
         SmartDashboard.putNumber("LimelightArea", area);
+        SmartDashboard.putNumber("LimelightSkew", skew);  
 
         /**NavX Dashboard Code */
         SmartDashboard.putNumber("navX Yaw", navX.getYaw());
+
     }
 
 
@@ -190,6 +229,14 @@ public class Drivetrain extends Subsystem implements PIDOutput {
      */
     public PIDController getGyroPID(){
         return gyroPID;
+    }
+
+    public PIDController getLeftPID(){
+        return leftPID;
+    }
+
+    public PIDController getRightPID(){
+        return rightPID;
     }
 
     /**
@@ -236,6 +283,8 @@ public class Drivetrain extends Subsystem implements PIDOutput {
         }
 
         //Reset yaw again. For funsies.
+        System.out.println(navX.getYaw());
+
         resetYaw();
     }
 
@@ -247,7 +296,7 @@ public class Drivetrain extends Subsystem implements PIDOutput {
     public void driveDistance(double distance, double speed){
         //Set the output ranges of leftPID and rightPID to the value of 'speed'.
         leftPID.setOutputRange(-speed, speed);
-        rightPID.setOutputRange(-speed, speed);
+        //rightPID.setOutputRange(-speed, speed);
 
         //Disable all PIDControllers.
         disablePIDControllers();
@@ -256,15 +305,15 @@ public class Drivetrain extends Subsystem implements PIDOutput {
         resetEncoders();
 
         //Change the leftPID and rightPID setpoints using an equation that takes the input distance and turns it into an encoder count.
-        leftPID.setSetpoint((int)(distance*(250/wheelCircumference)));
-        rightPID.setSetpoint((int)(distance*(250/wheelCircumference)));
+         leftPID.setSetpoint((int)(distance*(250/wheelCircumference)));
+        //rightPID.setSetpoint((int)(distance*(250/wheelCircumference)));
 
         //Enable leftPID and rightPID.
         leftPID.enable();
-        rightPID.enable();
+        //rightPID.enable();
 
         //Disable each PIDController once it reaches its setpoint.
-        while(leftPID.isEnabled() || rightPID.isEnabled()){
+        while(leftPID.isEnabled() /*|| rightPID.isEnabled()*/){
             drive(leftDummy.get(), rightDummy.get());
             if(leftPID.onTarget())
                 leftPID.disable();
@@ -287,10 +336,15 @@ public class Drivetrain extends Subsystem implements PIDOutput {
         //         drive(-speed, speed);   
         //     }
         // }
+            //Inaccuarte
+            
+            System.out.println(x);
             rotateToAngle(x, speed);
+            System.out.println(x);
         
-
     }
+ 
+    
     
     /**
      * The method used for the gyroscope 
@@ -304,30 +358,33 @@ public class Drivetrain extends Subsystem implements PIDOutput {
      * 
      * @param speed
      */
-    public void mathCalc(double speed){
-         //|53.34 is wrong and needs to be fixed
-         //|75.565 tape from ground
-         //|12 mounting
-         double tapeHeight = 75.565;
-         double robotHeight = 53.34;
-         double angleOfLimelight = 80;
-         double a2 = 90 - angleOfLimelight;
-         //rough estimate
-         double xr =  13;
-         double yr = 0;
-         double zr = 0;
-
+    public void mathCalc(){
+         a2 = 90 - x;
          
+         distance1 = (tapeHeight - robotHeight) / Math.tan(angleOfLimelight-a2);
 
-         //TODO these numbers may need to be changed cause Jack is bad
-         double distance1 = (tapeHeight - robotHeight) / Math.tan(angleOfLimelight-a2);
+         distance3 = (Math.tan(a2) * distance1); 
 
-         double distance3 = (Math.tan(a2) * distance1); 
-
-         double distance2 = (Math.cos(a2) * distance3);
+         distance2 = (Math.cos(a2) * distance3);
          
-         //drive certain distance 
-
-
     }
+    
+    public void driveToTarget(double speed){
+        
+        rotateToAngle(a2, speed);
+   
+        driveDistance(distance2, speed);
+        
+        rotateToAngle(-90, speed);
+
+        driveDistance(distance3, speed);
+    
+    }   
+    
+    public double[] getLimelightDirections(){
+        mathCalc();
+        double[] tmp = {distance2, distance3, a2};
+        return tmp;
+    }
+    
 }

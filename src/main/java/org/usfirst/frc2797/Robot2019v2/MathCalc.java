@@ -1,6 +1,5 @@
 package org.usfirst.frc2797.Robot2019v2;
 
-import edu.wpi.first.wpilibj.interfaces.Gyro;
 
 public class MathCalc {
     public void rocket (){
@@ -8,7 +7,6 @@ public class MathCalc {
         double robotHeight = 59.055;
         double tapeHeight = 53.34;
         double angleOfLimelight = 80.0;
-        double turningAngle = 90.0;
         double a2 = angleOfLimelight - 90.0;
         double robotSize = 81.28;
 

@@ -1,5 +1,7 @@
 package org.usfirst.frc2797.Robot2019v2.commands;
  
+import com.ctre.phoenix.ButtonMonitor;
+
 import org.usfirst.frc2797.Robot2019v2.OI;
 import org.usfirst.frc2797.Robot2019v2.Robot;
 import org.usfirst.frc2797.Robot2019v2.subsystems.Arm;
@@ -63,8 +65,6 @@ public class TeleopDrive extends Command {
         if(xbx.getAButtonPressed()){
             arm.toggle();
         }
-
-
         //extending hatch
         if(xbx.getBumperPressed(right)){
             hatch.extend();
@@ -76,9 +76,10 @@ public class TeleopDrive extends Command {
 
 
         //Climb
+        
         if(xbx.getXButtonPressed()){
             climber.toggleClimber();
-        }
+       }
 
         //Actuate Landing Actuators
         if(xbx.getBButtonPressed()){
@@ -90,7 +91,18 @@ public class TeleopDrive extends Command {
             Scheduler.getInstance().removeAll();
 
         }
+        
+        //very scary code, PID may need tuning i dont know, robot tends to overshoot target 
+        if(xbx.getYButtonPressed()){
+            drivetrain.rotateToTarget(0.4, 0.4);
+        }
 
+        //super scary code, needs editing probably 
+        if(xbx.getPOV()==180){
+            drivetrain.driveToTarget(.4);
+            //new Score(0.2);    
+        }
+        
     }
 
     // Make this return true when this Command no longer needs to run execute()

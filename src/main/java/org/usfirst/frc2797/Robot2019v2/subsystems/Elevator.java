@@ -33,6 +33,7 @@ public class Elevator {
         elevator2 = new VictorSPX(5);
         //Master-Slave functionality 
         elevator2.follow(elevator1);
+        elevator2.setInverted(true);
        
         //Initializing the Limit Switch's
         //bottomSwitch = new DigitalInput(4);
