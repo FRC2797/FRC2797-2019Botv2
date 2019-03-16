@@ -10,7 +10,7 @@ public class Climber extends Subsystem {
     private final DoubleSolenoid solenoid;
 
     public Climber(){
-        solenoid = new DoubleSolenoid(2,3);
+        solenoid = new DoubleSolenoid(4,5);
 
         solenoid.set(Value.kReverse);
     }

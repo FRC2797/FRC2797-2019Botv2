@@ -11,7 +11,6 @@
 
 package org.usfirst.frc2797.Robot2019v2;
 
-import com.ctre.phoenix.ButtonMonitor;
 
 import org.usfirst.frc2797.Robot2019v2.commands.AutonomousCommand;
 import org.usfirst.frc2797.Robot2019v2.commands.TeleopDrive;

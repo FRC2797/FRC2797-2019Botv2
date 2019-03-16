@@ -1,12 +1,12 @@
 package org.usfirst.frc2797.Robot2019v2.subsystems;
 
-import java.awt.Image;
-
+//region Imports
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 import com.kauailabs.navx.frc.AHRS;
 
 import org.usfirst.frc2797.Robot2019v2.Robot;
+import org.usfirst.frc2797.Robot2019v2.Timer;
 import org.usfirst.frc2797.Robot2019v2.commands.TeleopDrive;
 
 import edu.wpi.first.networktables.NetworkTable;
@@ -20,7 +20,7 @@ import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.command.Subsystem;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-
+//endregion Imports
 
 /**
  * This subsystem is for the robot's drivetrain. It contains all the methods used
@@ -63,40 +63,37 @@ public class Drivetrain extends Subsystem implements PIDOutput {
     private NetworkTable table = Robot.table;
     private static double x, y, area, skew;
     private boolean validTarget;
-    private Image hasTarget;
-
+    
     //tape height is the regulation field height
     private final static double tapeHeight = 32.4;
 
-    //TODO change height of limelight
-    private final static double robotHeight = 8.25;
+    private final static double robotHeight = 21;
 
     private final static double angleOfLimelight = 10;
 
-    private final static double robotLength = 38.5;    
+    //Uncomment if needed
+    //private final static double robotLength = 38.5;    
     
     //Closest angle to bot 
     private static double a2 = 90 - x;
-    
+
+    //Distances needed to move for Limelight Auto
     private static double distance1 = (tapeHeight - robotHeight) / Math.tan(angleOfLimelight-a2);
 
     private static double distance3 = (Math.tan(a2) * distance1); 
 
     private static double distance2 = (Math.cos(a2) * distance3);
 
+    // //not sure what these do exactly 
+    // private static double A = (distance3 + 33);
 
-    //not sure what these do exactly 
-    private static double A = (distance3 + 33);
-
-    private static double B = distance3;
+    // private static double B = distance3;
     
-    private static double actualAngle = Math.atan(B / A);
-
+    // private static double actualAngle = Math.atan(B / A);
     
-
-
     public Drivetrain() {
 
+        //region Motor Controller Initialization
         /**Initialize the motor controllers for the drivetrain */
         
         //Right side motor controllers
@@ -116,27 +113,33 @@ public class Drivetrain extends Subsystem implements PIDOutput {
         rearLeft.setInverted(false);
 
         rearLeft.follow(frontLeft);
-        
+        //endregion Motor Controller Initialization
+
+        //region Encoders and Gyroscope Initialization
+
         /**Initialize the encoders and gyroscope */
         //The encoder on the left side of the drivetrain
         leftEnc = new Encoder(0, 1, false, EncodingType.k2X);
         addChild("Drivetrain Left Encoder", leftEnc);
         leftEnc.setDistancePerPulse(1.0);
         leftEnc.setPIDSourceType(PIDSourceType.kDisplacement);
-        SmartDashboard.putData("Left Encoder", leftEnc);
 
         //The encoder on the right side of the drivetrain
         rightEnc = new Encoder(2, 3, false, EncodingType.k2X);
         addChild("Drivetrain Right Encoder", rightEnc);
         rightEnc.setDistancePerPulse(1.0);
         rightEnc.setPIDSourceType(PIDSourceType.kDisplacement);
-        SmartDashboard.putData("Right Encoder", rightEnc);
 
         //The gyroscope
         navX = new AHRS(SPI.Port.kMXP);
         addChild("navX", navX);
 
-        /**Create the PIDControllers for closed-loop control */
+        //endregion Encoders and Gyroscope Initialization
+
+        //TODO Tune all PID controllers.
+        //region PIDControllers
+
+        //Create the PIDControllers for closed-loop control 
         //Controller for the left motors
         leftPID = new PIDController(0.0075, 0.01, 0.0, 0.0, leftEnc, leftDummy);
         addChild("Drivetrain Left PID", leftPID);
@@ -160,6 +163,8 @@ public class Drivetrain extends Subsystem implements PIDOutput {
         gyroPID.setInputRange(-360.0, 360.0);
         gyroPID.setOutputRange(-1.0, 1.0);
         gyroPID.setContinuous(false);
+
+        //endregion PIDControllers
     }
 
     @Override
@@ -170,7 +175,8 @@ public class Drivetrain extends Subsystem implements PIDOutput {
 
     @Override
     public void periodic() {
-        /**Limelight Code */
+        //region Limelight Periodic
+        /**Limelight Variables and Dashboard Code */
         //Put data in a network table
         NetworkTableEntry tx = table.getEntry("tx");
         NetworkTableEntry ty = table.getEntry("ty");
@@ -189,7 +195,9 @@ public class Drivetrain extends Subsystem implements PIDOutput {
         SmartDashboard.putNumber("LimelightX", x);
         SmartDashboard.putNumber("LimelightY", y);
         SmartDashboard.putNumber("LimelightArea", area);
-        SmartDashboard.putNumber("LimelightSkew", skew);  
+        SmartDashboard.putNumber("LimelightSkew", skew); 
+        SmartDashboard.putBoolean("LIMELIGHT HAS A TARGET", validTarget); 
+        //endregion Limelight Periodic
 
         /**NavX Dashboard Code */
         SmartDashboard.putNumber("navX Yaw", navX.getYaw());
@@ -209,6 +217,7 @@ public class Drivetrain extends Subsystem implements PIDOutput {
         frontLeft.set(ControlMode.PercentOutput, leftSpeed);
     }
 
+    //region Encoder and Gyroscope Helper Methods
     /**
      * Reset the yaw on the navx.
      */
@@ -223,7 +232,9 @@ public class Drivetrain extends Subsystem implements PIDOutput {
         leftEnc.reset();
         rightEnc.reset();
     }
+    //endregion Encoder and Gyroscope Helper Methods
 
+    //region PID Helper Methods
     /**
      * Get the gyroPID for use in commands.
      */
@@ -240,6 +251,14 @@ public class Drivetrain extends Subsystem implements PIDOutput {
     }
 
     /**
+     * The method used for the gyroscope 
+     * PIDController to write to the drivetrain
+     */
+    public void pidWrite(double output){
+        rotateToAngleRate = output;
+    }
+
+    /**
      * Disables all PIDControllers in the drivetrain
      */
     public void disablePIDControllers(){
@@ -247,6 +266,7 @@ public class Drivetrain extends Subsystem implements PIDOutput {
         rightPID.disable();
         gyroPID.disable();
     }
+    //endregion PID Helper Methods
     
     /**
      * Turn the robot by a specific degree measure. This is relative to the current rotation.
@@ -328,31 +348,11 @@ public class Drivetrain extends Subsystem implements PIDOutput {
      * @param speed The speed at which to rotate the robot
      */
     public void rotateToTarget(double tolerance, double speed){
-        // while(x < 0 - tolerance || x > 0 + tolerance){
-        //     if(x < 0 - tolerance){
-        //         drive(speed, -speed);
-        //     }
-        //     if(x > 0 + tolerance){
-        //         drive(-speed, speed);   
-        //     }
-        // }
-            //Inaccuarte
-            
-            System.out.println(x);
-            rotateToAngle(x, speed);
-            System.out.println(x);
-        
+        System.out.println(x);
+        rotateToAngle(x, speed);
+        System.out.println(x);
     }
- 
     
-    
-    /**
-     * The method used for the gyroscope 
-     * PIDController to write to the drivetrain
-     */
-    public void pidWrite(double output){
-        rotateToAngleRate = output;
-    }
 
     /**
      * 
@@ -370,7 +370,9 @@ public class Drivetrain extends Subsystem implements PIDOutput {
     }
     
     public void driveToTarget(double speed){
-        
+        //Timer.Start();
+        //Timer.delay(1);
+    
         rotateToAngle(a2, speed);
    
         driveDistance(distance2, speed);
@@ -378,13 +380,18 @@ public class Drivetrain extends Subsystem implements PIDOutput {
         rotateToAngle(-90, speed);
 
         driveDistance(distance3, speed);
-    
-    }   
+
+
+    }
     
     public double[] getLimelightDirections(){
         mathCalc();
         double[] tmp = {distance2, distance3, a2};
         return tmp;
+    }
+
+    public boolean hasLimelightTarget(){
+        return this.validTarget;
     }
     
 }

@@ -4,7 +4,6 @@ import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 
 import edu.wpi.first.wpilibj.CounterBase.EncodingType;
-import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.PIDController;
 import edu.wpi.first.wpilibj.Spark;
@@ -32,8 +31,8 @@ public class Elevator {
         elevator1 = new VictorSPX(4);
         elevator2 = new VictorSPX(5);
         //Master-Slave functionality 
+        elevator2.setInverted(false);
         elevator2.follow(elevator1);
-        elevator2.setInverted(true);
        
         //Initializing the Limit Switch's
         //bottomSwitch = new DigitalInput(4);
@@ -58,12 +57,13 @@ public class Elevator {
 
    public boolean isTop(){
        //Checks if the elevator is at the top
-       return false; //topSwitch.get();
+       return false;//topSwitch.get();
+       
    }
 
    public boolean isBottom(){
        //Checks if the elevator is at the bottom
-       return false; //bottomSwitch.get();
+       return false;//bottomSwitch.get();
    }
 
 }
